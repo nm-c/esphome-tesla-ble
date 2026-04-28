@@ -1,0 +1,126 @@
+esphome:
+  name: tesla-test
+  friendly_name: Tesla Test
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+logger:
+
+wifi:
+  ssid: "test"
+  password: "testtesttest"
+
+mqtt:
+  broker: 192.168.1.1
+
+external_components:
+  - source:
+      type: local
+      path: ../components
+
+esp32_ble_tracker:
+
+ble_client:
+  - mac_address: AA:BB:CC:DD:EE:FF
+    id: tesla_ble_client
+
+tesla_ble_vehicle:
+  id: tesla_vehicle
+  ble_client_id: tesla_ble_client
+  vin: "5YJ3E1EAxxxxxxxxx"
+
+binary_sensor:
+  - platform: tesla_ble_vehicle
+    tesla_ble_id: tesla_vehicle
+    type: asleep
+    name: Asleep
+    icon: mdi:sleep
+  - platform: tesla_ble_vehicle
+    tesla_ble_id: tesla_vehicle
+    type: charger
+    name: Charger
+    icon: mdi:power-plug
+    device_class: plug
+
+sensor:
+  - platform: tesla_ble_vehicle
+    tesla_ble_id: tesla_vehicle
+    type: battery_level
+    name: Battery
+    unit_of_measurement: "%"
+    icon: mdi:battery
+
+text_sensor:
+  - platform: tesla_ble_vehicle
+    tesla_ble_id: tesla_vehicle
+    type: charging_state
+    name: Charging
+    icon: mdi:ev-station
+
+button:
+  - platform: tesla_ble_vehicle
+    tesla_ble_id: tesla_vehicle
+    type: pair
+    name: Pair BLE Key
+    icon: mdi:key-wireless
+    entity_category: diagnostic
+  - platform: tesla_ble_vehicle
+    tesla_ble_id: tesla_vehicle
+    type: wake
+    name: Wake up
+    icon: mdi:sleep-off
+  - platform: tesla_ble_vehicle
+    tesla_ble_id: tesla_vehicle
+    type: flash_lights
+    name: Flash Lights
+    icon: mdi:car-light-high
+
+switch:
+  - platform: tesla_ble_vehicle
+    tesla_ble_id: tesla_vehicle
+    type: charging
+    name: Charger
+    icon: mdi:ev-station
+    restore_mode: RESTORE_DEFAULT_OFF
+
+number:
+  - platform: tesla_ble_vehicle
+    tesla_ble_id: tesla_vehicle
+    type: charging_amps
+    name: Charging Amps
+    unit_of_measurement: A
+    icon: mdi:current-ac
+  - platform: tesla_ble_vehicle
+    tesla_ble_id: tesla_vehicle
+    type: charging_limit
+    name: Charging Limit
+    unit_of_measurement: "%"
+
+lock:
+  - platform: tesla_ble_vehicle
+    tesla_ble_id: tesla_vehicle
+    type: doors
+    name: Doors
+    icon: mdi:car-door-lock
+
+cover:
+  - platform: tesla_ble_vehicle
+    tesla_ble_id: tesla_vehicle
+    type: trunk
+    name: Trunk
+    icon: mdi:car-back
+    device_class: door
+  - platform: tesla_ble_vehicle
+    tesla_ble_id: tesla_vehicle
+    type: charge_port_door
+    name: Charge Port Door
+    icon: mdi:ev-plug-tesla
+    device_class: door
+
+climate:
+  - platform: tesla_ble_vehicle
+    tesla_ble_id: tesla_vehicle
+    name: Climate
