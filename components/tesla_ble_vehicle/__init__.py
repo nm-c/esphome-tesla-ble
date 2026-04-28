@@ -260,10 +260,14 @@ async def _maybe_register_mqtt(entity_var, definition, mqtt_component_class):
     yoziru's data-driven create_* helpers below bypass the yaml schema, which
     is what normally causes ESPHome core to attach the MQTT wrapper (via
     `cv.OnlyWith(CONF_MQTT_ID, "mqtt")` in each domain's _SCHEMA). We
-    replicate that wiring here."""
+    replicate that wiring here. Because schema validation is bypassed, the
+    new ID isn't auto-registered in `CORE.component_ids` either, so we add
+    it manually before `register_mqtt_component` (which expects to find
+    and consume it)."""
     if "mqtt" not in CORE.config:
         return
     mqtt_id = cv.declare_id(mqtt_component_class)(f"mqtt_tesla_{definition['id']}")
+    CORE.component_ids.add(str(mqtt_id))
     mqtt_var = cg.new_Pvariable(mqtt_id, entity_var)
     await mqtt.register_mqtt_component(mqtt_var, {})
 
