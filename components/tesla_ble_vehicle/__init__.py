@@ -1,6 +1,6 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import ble_client, binary_sensor, button, switch, number, sensor, text_sensor, lock, cover, climate
+from esphome.components import ble_client, binary_sensor, button, switch, number, sensor, text_sensor, lock, cover, climate, mqtt
 from esphome.const import (
     CONF_ACCURACY_DECIMALS,
     CONF_DEVICE_CLASS,
@@ -15,6 +15,7 @@ from esphome.const import (
     CONF_UNIT_OF_MEASUREMENT,
 )
 from esphome import automation
+from esphome.core import CORE
 
 
 CODEOWNERS = ["@yoziru"]
@@ -252,6 +253,21 @@ CONFIG_SCHEMA = (
 # HELPER FUNCTIONS
 # =============================================================================
 
+async def _maybe_register_mqtt(entity_var, definition, mqtt_component_class):
+    """If the user's yaml has mqtt: configured, wrap the entity in its MQTT
+    counterpart so ESPHome publishes discovery + state to the broker.
+
+    yoziru's data-driven create_* helpers below bypass the yaml schema, which
+    is what normally causes ESPHome core to attach the MQTT wrapper (via
+    `cv.OnlyWith(CONF_MQTT_ID, "mqtt")` in each domain's _SCHEMA). We
+    replicate that wiring here."""
+    if "mqtt" not in CORE.config:
+        return
+    mqtt_id = cv.declare_id(mqtt_component_class)(f"mqtt_tesla_{definition['id']}")
+    mqtt_var = cg.new_Pvariable(mqtt_id, entity_var)
+    await mqtt.register_mqtt_component(mqtt_var, {})
+
+
 def get_device_class_const(component_module, device_class_str):
     """Convert device class string to the actual constant."""
     if device_class_str is None:
@@ -276,6 +292,7 @@ async def create_binary_sensor(var, definition):
     sens = await binary_sensor.new_binary_sensor(config)
     # Use generic setter with sensor ID
     cg.add(var.set_binary_sensor(definition["id"], sens))
+    await _maybe_register_mqtt(sens, definition, mqtt.MQTTBinarySensorComponent)
     return sens
 
 
@@ -301,6 +318,7 @@ async def create_sensor(var, definition):
     sens = await sensor.new_sensor(config)
     # Use generic setter with sensor ID
     cg.add(var.set_sensor(definition["id"], sens))
+    await _maybe_register_mqtt(sens, definition, mqtt.MQTTSensorComponent)
     return sens
 
 
@@ -318,6 +336,7 @@ async def create_text_sensor(var, definition):
     sens = await text_sensor.new_text_sensor(config)
     # Use generic setter with sensor ID
     cg.add(var.set_text_sensor(definition["id"], sens))
+    await _maybe_register_mqtt(sens, definition, mqtt.MQTTTextSensor)
     return sens
 
 
@@ -338,6 +357,7 @@ async def create_button(var, definition):
     cg.add(btn.set_parent(var))
     if definition.get("setter"):
         cg.add(getattr(var, definition["setter"])(btn))
+    await _maybe_register_mqtt(btn, definition, mqtt.MQTTButtonComponent)
     return btn
 
 
@@ -356,6 +376,7 @@ async def create_switch(var, definition):
     cg.add(sw.set_parent(var))
     if definition.get("setter"):
         cg.add(getattr(var, definition["setter"])(sw))
+    await _maybe_register_mqtt(sw, definition, mqtt.MQTTSwitchComponent)
     return sw
 
 
@@ -386,6 +407,7 @@ async def create_number(var, definition, config):
     cg.add(num.set_parent(var))
     if definition.get("setter"):
         cg.add(getattr(var, definition["setter"])(num))
+    await _maybe_register_mqtt(num, definition, mqtt.MQTTNumberComponent)
     return num
 
 
@@ -404,6 +426,7 @@ async def create_lock(var, definition):
     cg.add(lck.set_parent(var))
     if definition.get("setter"):
         cg.add(getattr(var, definition["setter"])(lck))
+    await _maybe_register_mqtt(lck, definition, mqtt.MQTTLockComponent)
     return lck
 
 
@@ -424,6 +447,7 @@ async def create_cover(var, definition):
     cg.add(cvr.set_parent(var))
     if definition.get("setter"):
         cg.add(getattr(var, definition["setter"])(cvr))
+    await _maybe_register_mqtt(cvr, definition, mqtt.MQTTCoverComponent)
     return cvr
 
 
@@ -445,6 +469,7 @@ async def create_climate_entity(var, definition):
     cg.add(clm.set_parent(var))
     if definition.get("setter"):
         cg.add(getattr(var, definition["setter"])(clm))
+    await _maybe_register_mqtt(clm, definition, mqtt.MQTTClimateComponent)
     return clm
 
 
